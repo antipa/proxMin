@@ -1,0 +1,3 @@
+function y = TVnorm(x)
+dh = 
+y = sum(sum(sqrt(diffh(x).^2+diffv(x).^2)));

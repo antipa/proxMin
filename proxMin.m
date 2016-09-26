@@ -75,14 +75,15 @@ switch lower(options.momentum)
         y_km1 = x_km1;
         fm1 = inf;
         norm_x_km1 = inf;
+        tic
         while (step_num < options.maxIter) && (f>options.residTol);
             
             step_num = step_num+1;
             [f, g] = GradErrHandle(y_km1);
-            fun_val(step_num) = f;
             uk = y_km1 - step_size*g;
             [xk, norm_x] = ProxFunc(uk);
             f = f+norm_x_km1;
+            fun_val(step_num) = gather(f);
             if f-fm1>0
                 %fprintf('Resetting momentum\n')
                 tk = 1;
@@ -97,14 +98,16 @@ switch lower(options.momentum)
                 if options.disp_figs
                     draw_figures(yk,options);
                 end
+                toc
                 if options.known_input
                     fprintf('%i\t %6.4e\t %6.4e\t %.3f\t %6.4e\t %.2f dB\n',...
                         step_num,f,norm_x,tk,...
                         sum(sum((options.crop(options.xin)-options.crop(yk)).^2))/numel(options.crop(yk)),...
-                        psnr(options.crop(yk),options.crop(options.xin),255));
+                        psnr(options.crop(gather(yk)),options.crop(options.xin),255));
                 else
                     fprintf('%i\t%6.4e\t%6.4e\t%.3f\n',step_num,f,norm_x,tk)
                 end
+                tic
             end
             
             if abs(fm1-f)<options.convTol
@@ -143,7 +146,7 @@ if numel(options.xsize)==2
     axis image
     colorbar
     colormap parula
-    caxis([prctile(xk(:),.1) prctile(xk(:),99.9)])
+    caxis(gather([prctile(xk(:),.1) prctile(xk(:),99.9)]))
 elseif numel(options.xsize) == 4
     xkr = reshape(xk,options.xsize);
     subplot(2,2,1)
