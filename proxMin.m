@@ -34,7 +34,7 @@ if ~isfield(options,'disp_figs')
 end
 step_num = 0;
 yk = x0;
-h1 = figure(1);
+%h1 = figure(1);
 fprintf('Iteration\t objective\t ||x||\tmomentum\n');
 fun_val = zeros(options.maxIter,1);
 %step_size = .0000000008;
@@ -70,30 +70,22 @@ switch lower(options.momentum)
         end
         
     case ('nesterov')
-        t_km1 = 1;
-        x_km1 = x0;
-        y_km1 = x_km1;
-        fm1 = inf;
-        norm_x_km1 = inf;
+        tk = 1;
+        xk = x0;
+        yk = xk;
+        f = 1e12;
+        f_kp1 = f;
         tic
-        while (step_num < options.maxIter) && (f>options.residTol);
+        while (step_num < options.maxIter) && (f>options.residTol)
             
             step_num = step_num+1;
-            [f, g] = GradErrHandle(y_km1);
-            uk = y_km1 - step_size*g;
-            [xk, norm_x] = ProxFunc(uk);
-            f = f+norm_x_km1;
-            fun_val(step_num) = gather(f);
-            if f-fm1>0
-                %fprintf('Resetting momentum\n')
-                tk = 1;
-                t_km1 = 1;
-                xk = x_km1;
-            else
-                tk = (1+sqrt(1+4*t_km1^2))/2;
-            end
-            %xk = xk;
-            yk = xk+(t_km1-1)/tk*(xk-x_km1);
+            [f_kp1, g] = GradErrHandle(yk);
+            [x_kp1, norm_x] = ProxFunc(yk-options.stepsize*g);
+            t_kp1 = (1+sqrt(1+4*tk^2))/2;
+            beta_kp1 = (tk-1)/t_kp1;
+            dx = x_kp1-xk;
+            y_kp1 = x_kp1+beta_kp1*(dx);
+            restart = (yk(:)-x_kp1(:))'*dx(:);
             if ~mod(step_num,options.disp_fig_interval)
                 if options.disp_figs
                     draw_figures(yk,options);
@@ -109,20 +101,25 @@ switch lower(options.momentum)
                 end
                 tic
             end
+            if restart>0
+                tk = 1;
+            else
+                tk = t_kp1;
+            end
             
-            if abs(fm1-f)<options.convTol
+            xk = x_kp1;
+            yk = y_kp1;
+            f = f_kp1;
+            
+            
+            if abs(restart)<options.convTol
                 fprintf('Answer is stable to within convTol. Stopping.\n')
-                out = y_km1;
+                out = yk;
                 draw_figures(out,options);
                 break
             end
             
             
-            fm1 = f;
-            y_km1 = yk;
-            t_km1 = tk;
-            x_km1 = xk;
-            norm_x_km1 = norm_x;
             
         end
         
@@ -141,8 +138,9 @@ draw_figures(out,options)
 return
 
 function draw_figures(xk,options)
+set(0,'CurrentFigure',options.fighandle)
 if numel(options.xsize)==2
-    imagesc(options.disp_crop(reshape(xk,options.xsize)))
+    imagesc(options.disp_crop(xk))
     axis image
     colorbar
     colormap parula
