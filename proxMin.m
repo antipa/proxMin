@@ -144,7 +144,48 @@ if numel(options.xsize)==2
     axis image
     colorbar
     colormap parula
-    caxis(gather([prctile(xk(:),.1) prctile(xk(:),99.9)]))
+    %caxis(gather([prctile(xk(:),.1) prctile(xk(:),99.9)]))
+elseif numel(options.xsize)==3
+    xk = gather(xk);
+    subplot(1,3,1)
+    
+    im1 = squeeze(sum(xk,3));
+    imagesc(im1);
+    hold on
+    axis image
+    colormap parula
+    %colorbar
+    caxis([0 prctile(im1(:),99.9)])
+    set(gca,'fontSize',6)
+    axis off
+    hold off
+    
+    subplot(1,3,2)
+    im2 = squeeze(sum(xk,1));
+    imagesc(im2);
+    hold on    
+    axis image
+    colormap parula
+    %colorbar
+    set(gca,'fontSize',8)
+    caxis([0 prctile(im2(:),99.9)])
+    axis off
+    hold off
+    drawnow
+    
+    subplot(1,3,3)
+    im3 = squeeze(sum(xk,2));
+    imagesc(im3);
+    hold on
+    axis image
+    colormap parula
+    colorbar   
+    set(gca,'fontSize',8)
+    caxis([0 prctile(im3(:),99.9)]);
+    axis off
+    hold off
+    
+     drawnow
 elseif numel(options.xsize) == 4
     xkr = reshape(xk,options.xsize);
     subplot(2,2,1)
