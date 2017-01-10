@@ -32,6 +32,9 @@ end
 if ~isfield(options,'disp_figs')
     options.disp_figs = 0;
 end
+if ~isfield(options,'color_map')
+    options.color_map = 'parula';
+end
 step_num = 0;
 yk = x0;
 %h1 = figure(1);
@@ -143,7 +146,7 @@ if numel(options.xsize)==2
     imagesc(options.disp_crop(xk))
     axis image
     colorbar
-    colormap parula
+    colormap(options.color_map);
     %caxis(gather([prctile(xk(:),.1) prctile(xk(:),99.9)]))
 elseif numel(options.xsize)==3
     xk = gather(xk);
