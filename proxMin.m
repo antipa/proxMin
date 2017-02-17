@@ -38,7 +38,7 @@ end
 step_num = 0;
 yk = x0;
 %h1 = figure(1);
-fprintf('Iteration\t objective\t ||x||\tmomentum\n');
+fprintf('Iteration\t objective\t ||x||\t sparsity percent\tmomentum\n');
 fun_val = zeros(options.maxIter,1);
 %step_size = .0000000008;
 step_size = options.stepsize;
@@ -83,12 +83,15 @@ switch lower(options.momentum)
             
             step_num = step_num+1;
             [f_kp1, g] = GradErrHandle(yk);
+            fun_val(step_num) = gather(f_kp1);
             [x_kp1, norm_x] = ProxFunc(yk-options.stepsize*g);
+            f_kp1 = f_kp1+norm_x;
             t_kp1 = (1+sqrt(1+4*tk^2))/2;
             beta_kp1 = (tk-1)/t_kp1;
             dx = x_kp1-xk;
             y_kp1 = x_kp1+beta_kp1*(dx);
             restart = (yk(:)-x_kp1(:))'*dx(:);
+            %restart = f_kp1-f;
             if ~mod(step_num,options.disp_fig_interval)
                 if options.disp_figs
                     draw_figures(yk,options);
@@ -100,14 +103,17 @@ switch lower(options.momentum)
                         sum(sum((options.crop(options.xin)-options.crop(yk)).^2))/numel(options.crop(yk)),...
                         psnr(options.crop(gather(yk)),options.crop(options.xin),255));
                 else
-                    fprintf('%i\t%6.4e\t%6.4e\t%.3f\n',step_num,f,norm_x,tk)
+                    fprintf('%i\t%6.4e\t%6.4e\t%6.4e\t%.3f\n',step_num,f,norm_x,nnz(x_kp1)/numel(x_kp1)*100,tk)
                 end
                 tic
             end
             if restart>0
                 tk = 1;
+                
             else
                 tk = t_kp1;
+                %xk = x_kp1;
+                %yk = y_kp1;
             end
             
             xk = x_kp1;
@@ -147,12 +153,12 @@ if numel(options.xsize)==2
     axis image
     colorbar
     colormap(options.color_map);
-    %caxis(gather([prctile(xk(:),.1) prctile(xk(:),99.9)]))
+    %caxis(gather([prctile(xk(:),.1) prctile(xk(:),90)]))
 elseif numel(options.xsize)==3
     xk = gather(xk);
     subplot(1,3,1)
     
-    im1 = squeeze(sum(xk,3));
+    im1 = squeeze(max(xk,[],3));
     imagesc(im1);
     hold on
     axis image
@@ -167,7 +173,7 @@ elseif numel(options.xsize)==3
     im2 = squeeze(sum(xk,1));
     imagesc(im2);
     hold on    
-    axis image
+    %axis image
     colormap parula
     %colorbar
     set(gca,'fontSize',8)
@@ -180,7 +186,7 @@ elseif numel(options.xsize)==3
     im3 = squeeze(sum(xk,2));
     imagesc(im3);
     hold on
-    axis image
+    %axis image
     colormap parula
     colorbar   
     set(gca,'fontSize',8)
