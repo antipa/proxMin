@@ -35,6 +35,19 @@ end
 if ~isfield(options,'color_map')
     options.color_map = 'parula';
 end
+if ~isfield(options,'save_progress')
+    options.save_progress = 0;
+end
+if ~isfield(options,'restart_interval')
+    options.restart_interval = 0;
+end
+if options.save_progress
+    if ~isfield(options,'save_progress')
+        options.progress_file = 'prox_progress.avi';
+    end
+    options.vidObj = VideoWriter(options.progress_file);
+    open(options.vidObj);
+end
 step_num = 0;
 yk = x0;
 %h1 = figure(1);
@@ -44,6 +57,7 @@ fun_val = zeros(options.maxIter,1);
 step_size = options.stepsize;
 fm1 = 0;
 f = inf;
+
 switch lower(options.momentum)
     case('linear')
         while (step_num < options.maxIter) && (f>options.residTol);
@@ -90,7 +104,12 @@ switch lower(options.momentum)
             beta_kp1 = (tk-1)/t_kp1;
             dx = x_kp1-xk;
             y_kp1 = x_kp1+beta_kp1*(dx);
+            
             restart = (yk(:)-x_kp1(:))'*dx(:);
+            if restart<0 && mod(step_num,options.restart_interval)==0
+                fprintf('reached momentum reset interval\n')
+                restart = Inf;
+            end
             %restart = f_kp1-f;
             if ~mod(step_num,options.disp_fig_interval)
                 if options.disp_figs
@@ -135,15 +154,20 @@ switch lower(options.momentum)
 end
 if (f<options.residTol)
     fprintf('Residual below residTol. Stopping. \n')
+
 end
 if step_num>=options.maxIter
     fprintf('Reached max number of iterations. Stopping. \n');
+
 end
 out = yk;
 if nargout>1
     varargout{1} = fun_val;
 end
 draw_figures(out,options)
+if options.save_progress
+    close(options.vidObj);
+end
 return
 
 function draw_figures(xk,options)
@@ -195,6 +219,20 @@ elseif numel(options.xsize)==3
     hold off
     
      drawnow
+     if options.save_progress
+         %save_count = save_count+1;
+          frame = getframe(options.fighandle);
+          writeVideo(options.vidObj,frame);
+    % Close the file.
+
+%         gifim = frame2im(frame);
+%         [gifimind,gifcm] = rgb2ind(gifim,256);
+%         if save_count == 1
+%             imwrite(imind,cm,options.progress_file,'gif', 'Loopcount',inf);
+%         else
+%             imwrite(imind,cm,options.progress_file,'gif','WriteMode','append');
+%         end
+     end
 elseif numel(options.xsize) == 4
     xkr = reshape(xk,options.xsize);
     subplot(2,2,1)
