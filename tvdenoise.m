@@ -46,7 +46,7 @@ if lambda < 0
     error('Parameter lambda must be nonnegative.');
 end
 
-dt = 0.5;
+dt = 0.25;
 
 N = size(f);
 id = [2:N(1),N(1)];
@@ -57,18 +57,19 @@ p1 = zeros(size(f));
 p2 = zeros(size(f));
 divp = zeros(size(f));
 lastdivp = ones(size(f));
-
 if length(N) == 2           % TV denoising
     %while norm(divp(:) - lastdivp(:),inf) > Tol
     for i=1:iters
         lastdivp = divp;
         z = divp - f*lambda;
+        %z(z<0) = 0;
         z1 = z(:,ir) - z;
         z2 = z(id,:) - z;
         denom = 1 + dt*sqrt(z1.^2 + z2.^2);
         p1 = (p1 + dt*z1)./denom;
         p2 = (p2 + dt*z2)./denom;
         divp = p1 - p1(:,il) + p2 - p2(iu,:);
+        %divp = min(divp,0);
     end
 elseif length(N) == 3       % Vectorial TV denoising
     repchannel = ones(N(3),1);
