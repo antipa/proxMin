@@ -46,7 +46,7 @@ if lambda < 0
     error('Parameter lambda must be nonnegative.');
 end
 
-dt = 0.5;
+dt = 0.25;
 
 N = size(f);
 id = [2:N(1),N(1)];

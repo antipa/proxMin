@@ -2,4 +2,4 @@ function [f, g] = linear_gradient(x,A,Ah,b)
 u = A(x);
 r = u-b;
 g = Ah(r);
-f = norm(r,'fro');
+f = .5*norm(r,'fro')^2;

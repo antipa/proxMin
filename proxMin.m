@@ -45,6 +45,13 @@ if options.save_progress
     if ~isfield(options,'save_progress')
         options.progress_file = 'prox_progress.avi';
     end
+    if exist(options.progress_file,'file')
+        overwrite_mov = input('video file exists. Overwrite? y to overwrite, n to abort.');
+        if strcmpi(overwrite_mov,'n')
+            new_mov_name = input('input new name (no extension): ');
+            options.progress_file = [new_mov_name,'.avi'];
+        end
+    end
     options.vidObj = VideoWriter(options.progress_file);
     open(options.vidObj);
 end
@@ -116,11 +123,12 @@ switch lower(options.momentum)
                     draw_figures(yk,options);
                 end
                 toc
+                %sum(sum((options.crop(options.xin)-options.crop(yk)).^2))/numel(options.crop(yk)),...
                 if options.known_input
                     fprintf('%i\t %6.4e\t %6.4e\t %.3f\t %6.4e\t %.2f dB\n',...
-                        step_num,f,norm_x,tk,...
-                        sum(sum((options.crop(options.xin)-options.crop(yk)).^2))/numel(options.crop(yk)),...
-                        psnr(options.crop(gather(yk)),options.crop(options.xin),255));
+                        step_num,f,norm_x,tk,...                        
+                        norm(options.xin(:) - yk(:)),...
+                        psnr(gather(yk),options.xin,255));
                 else
                     fprintf('%i\t%6.4e\t%6.4e\t%6.4e\t%.3f\n',step_num,f,norm_x,nnz(x_kp1)/numel(x_kp1)*100,tk)
                 end
@@ -128,7 +136,7 @@ switch lower(options.momentum)
             end
             if restart>0
                 tk = 1;
-                
+                fprintf('restarting momentum \n')
             else
                 tk = t_kp1;
                 %xk = x_kp1;
@@ -180,6 +188,7 @@ if numel(options.xsize)==2
     %caxis(gather([prctile(xk(:),.1) prctile(xk(:),90)]))
 elseif numel(options.xsize)==3
     xk = gather(xk);
+    set(0,'CurrentFigure',options.fighandle)
     subplot(1,3,1)
     
     im1 = squeeze(max(xk,[],3));
@@ -192,9 +201,9 @@ elseif numel(options.xsize)==3
     set(gca,'fontSize',6)
     axis off
     hold off
-    
+    set(0,'CurrentFigure',options.fighandle)
     subplot(1,3,2)
-    im2 = squeeze(sum(xk,1));
+    im2 = squeeze(max(xk,[],1));
     imagesc(im2);
     hold on    
     %axis image
@@ -205,9 +214,9 @@ elseif numel(options.xsize)==3
     axis off
     hold off
     drawnow
-    
+    set(0,'CurrentFigure',options.fighandle)
     subplot(1,3,3)
-    im3 = squeeze(sum(xk,2));
+    im3 = squeeze(max(xk,[],2));
     imagesc(im3);
     hold on
     %axis image
