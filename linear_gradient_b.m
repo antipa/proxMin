@@ -9,4 +9,4 @@ function [f, g] = linear_gradient_b(x,A,At,b)
 
 u = A(x);
 g = At(u-b);
-f = norm(u-b,'fro');
+f = norm(u(:)-b(:));

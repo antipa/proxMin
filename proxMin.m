@@ -1,6 +1,6 @@
 function [out,varargout] = proxMin(GradErrHandle,ProxFunc,x0,b,options)
 
-% Out = WavelengProxGrad(GradErrHanle,ProxHandle,AxyTxy0,options)
+% Out = proxMin(GradErrHanle,ProxHandle,AxyTxy0,measurement,options)
 %
 % GradErrHandle: handle for function that computes error and gradient at
 %   each step
@@ -27,10 +27,17 @@ if ~isfield(options,'xsize')
     options.xsize = size(A,2);
 end
 if ~isfield(options,'momentum')
-    options.momentum = 'linear';
+    options.momentum = 'nesterov';
 end
 if ~isfield(options,'disp_figs')
     options.disp_figs = 0;
+end
+
+if ~isfield(options,'restarting')
+    options.restarting = 0;
+end
+if ~isfield(options,'print_interval')
+    options.print_interval = 1;
 end
 if ~isfield(options,'color_map')
     options.color_map = 'parula';
@@ -58,7 +65,7 @@ end
 step_num = 0;
 yk = x0;
 %h1 = figure(1);
-fprintf('Iteration\t objective\t ||x||\t sparsity percent\tmomentum\n');
+
 fun_val = zeros(options.maxIter,1);
 %step_size = .0000000008;
 step_size = options.stepsize;
@@ -104,49 +111,63 @@ switch lower(options.momentum)
             
             step_num = step_num+1;
             [f_kp1, g] = GradErrHandle(yk);
-            fun_val(step_num) = gather(f_kp1);
+            fun_val(step_num) = f_kp1;
+            %fun_val(step_num) = norm(options.xin-options.crop(yk),'fro')/norm(options.xin,'fro');
             [x_kp1, norm_x] = ProxFunc(yk-options.stepsize*g);
-            f_kp1 = f_kp1+norm_x;
+            fun_val = fun_val+norm_x;
+
             t_kp1 = (1+sqrt(1+4*tk^2))/2;
             beta_kp1 = (tk-1)/t_kp1;
             dx = x_kp1-xk;
             y_kp1 = x_kp1+beta_kp1*(dx);
             
             restart = (yk(:)-x_kp1(:))'*dx(:);
+
+            
+            if step_num == 1
+                if options.known_input
+                    fprintf('Iteration \t objective \t ||x|| \t momentum \t MSE \t PSNR\n');
+                else
+                    fprintf('Iteration\t objective\t ||x|| \t sparsity \t momentum \t elapsed time\n');
+                end
+            end
             if restart<0 && mod(step_num,options.restart_interval)==0
                 fprintf('reached momentum reset interval\n')
                 restart = Inf;
             end
             %restart = f_kp1-f;
-            if ~mod(step_num,options.disp_fig_interval)
-                if options.disp_figs
-                    draw_figures(yk,options);
-                end
-                toc
-                %sum(sum((options.crop(options.xin)-options.crop(yk)).^2))/numel(options.crop(yk)),...
+            
+            if ~mod(step_num,options.print_interval)
+
                 if options.known_input
                     fprintf('%i\t %6.4e\t %6.4e\t %.3f\t %6.4e\t %.2f dB\n',...
                         step_num,f,norm_x,tk,...                        
                         norm(options.xin(:) - yk(:)),...
                         psnr(gather(yk),options.xin,255));
                 else
-                    fprintf('%i\t%6.4e\t%6.4e\t%6.4e\t%.3f\n',step_num,f,norm_x,nnz(x_kp1)/numel(x_kp1)*100,tk)
+                    telapse = toc;
+                    fprintf('%i\t%6.4e\t%6.4e\t%6.4e\t%.3f\t%.4f\n',step_num,f,norm_x,nnz(x_kp1)/numel(x_kp1)*100,tk,telapse)
                 end
                 tic
             end
-            if restart>0
-                tk = 1;
-                fprintf('restarting momentum \n')
-            else
-                tk = t_kp1;
-                %xk = x_kp1;
-                %yk = y_kp1;
+            
+            if ~mod(step_num,options.disp_fig_interval)
+                if options.disp_figs
+                    draw_figures(yk,options);
+                end
             end
             
-            xk = x_kp1;
-            yk = y_kp1;
+            if restart>0 && options.restarting
+                tk = 1;
+                fprintf('restarting momentum \n')
+                yk = x_kp1;            
+            else
+                tk = t_kp1;
+                yk = y_kp1;
+            end
+            xk = x_kp1;           
             f = f_kp1;
-            
+
             
             if abs(restart)<options.convTol
                 fprintf('Answer is stable to within convTol. Stopping.\n')
