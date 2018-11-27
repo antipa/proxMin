@@ -66,15 +66,15 @@ step_num = 0;
 yk = x0;
 %h1 = figure(1);
 
-fun_val = zeros(options.maxIter,1);
+fun_val = zeros([options.maxIter,1],'like',x0);
 %step_size = .0000000008;
-step_size = options.stepsize;
-fm1 = 0;
+step_size = options.stepsize*ones(1,'like',x0);
+fm1 = zeros(1,'like',x0);
 f = inf;
 
 switch lower(options.momentum)
     case('linear')
-        while (step_num < options.maxIter) && (f>options.residTol);
+        while (step_num < options.maxIter) && (f>options.residTol)
             
             step_num = step_num+1;
             [ f, g ] = GradErrHandle( yk );
@@ -101,10 +101,10 @@ switch lower(options.momentum)
         end
         
     case ('nesterov')
-        tk = 1;
+        tk = ones(1,'like',x0);
         xk = x0;
         yk = xk;
-        f = 1e12;
+        f = 1e12*ones(1,'like',x0);
         f_kp1 = f;
         tic
         while (step_num < options.maxIter) && (f>options.residTol)
@@ -114,7 +114,7 @@ switch lower(options.momentum)
             fun_val(step_num) = f_kp1;
             %fun_val(step_num) = norm(options.xin-options.crop(yk),'fro')/norm(options.xin,'fro');
             [x_kp1, norm_x] = ProxFunc(yk-options.stepsize*g);
-            fun_val = fun_val+norm_x;
+            fun_val(step_num) = fun_val(step_num)+norm_x;
 
             t_kp1 = (1+sqrt(1+4*tk^2))/2;
             beta_kp1 = (tk-1)/t_kp1;
@@ -128,7 +128,7 @@ switch lower(options.momentum)
                 if options.known_input
                     fprintf('Iteration \t objective \t ||x|| \t momentum \t MSE \t PSNR\n');
                 else
-                    fprintf('Iteration\t objective\t ||x|| \t sparsity \t momentum \t elapsed time\n');
+                    fprintf('Iteration\t data fidelity\t ||x|| \t objective \tsparsity \t momentum \t elapsed time\n');
                 end
             end
             if restart<0 && mod(step_num,options.restart_interval)==0
@@ -146,7 +146,7 @@ switch lower(options.momentum)
                         psnr(gather(yk),options.xin,255));
                 else
                     telapse = toc;
-                    fprintf('%i\t%6.4e\t%6.4e\t%6.4e\t%.3f\t%.4f\n',step_num,f,norm_x,nnz(x_kp1)/numel(x_kp1)*100,tk,telapse)
+                    fprintf('%i\t%6.4e\t%6.4e\t%6.4e\t%6.4e\t%.3f\t%.4f\n',step_num,f,norm_x,fun_val(step_num), nnz(x_kp1)/numel(x_kp1)*100,tk,telapse)
                 end
                 tic
             end
