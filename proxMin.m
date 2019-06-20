@@ -155,6 +155,13 @@ switch lower(options.momentum)
                 if options.disp_figs
                     draw_figures(yk,options);
                 end
+           
+                if options.save_progress
+                    
+                    frame = getframe(options.fighandle);
+                    writeVideo(options.vidObj,frame);
+                    
+                end
             end
             
             if restart>0 && options.restarting
@@ -248,21 +255,7 @@ elseif numel(options.xsize)==3
     axis off
     hold off
     
-     drawnow
-     if options.save_progress
-         %save_count = save_count+1;
-          frame = getframe(options.fighandle);
-          writeVideo(options.vidObj,frame);
-    % Close the file.
 
-%         gifim = frame2im(frame);
-%         [gifimind,gifcm] = rgb2ind(gifim,256);
-%         if save_count == 1
-%             imwrite(imind,cm,options.progress_file,'gif', 'Loopcount',inf);
-%         else
-%             imwrite(imind,cm,options.progress_file,'gif','WriteMode','append');
-%         end
-     end
 elseif numel(options.xsize) == 4
     xkr = reshape(xk,options.xsize);
     subplot(2,2,1)
