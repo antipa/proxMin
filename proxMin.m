@@ -48,6 +48,9 @@ end
 if ~isfield(options,'restart_interval')
     options.restart_interval = 0;
 end
+if ~isfield(options,'disp_crop')
+    options.disp_crop = @(x)x;
+end
 if options.save_progress
     if ~isfield(options,'save_progress')
         options.progress_file = 'prox_progress.avi';
