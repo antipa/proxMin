@@ -51,6 +51,9 @@ end
 if ~isfield(options,'disp_crop')
     options.disp_crop = @(x)x;
 end
+if ~isfield(options,'disp_prctl')
+    options.disp_prctl = 99.999;
+end
 if options.save_progress
     if ~isfield(options,'save_progress')
         options.progress_file = 'prox_progress.avi';
@@ -228,7 +231,7 @@ elseif numel(options.xsize)==3
     axis image
     colormap parula
     %colorbar
-    caxis([0 prctile(im1(:),99.9)])
+    caxis([0 prctile(im1(:),options.disp_prctl)])
     set(gca,'fontSize',6)
     axis off
     hold off
@@ -241,7 +244,7 @@ elseif numel(options.xsize)==3
     colormap parula
     %colorbar
     set(gca,'fontSize',8)
-    caxis([0 prctile(im2(:),99.9)])
+    caxis([0 prctile(im2(:),options.disp_prctl)])
     axis off
     hold off
     drawnow
@@ -254,7 +257,7 @@ elseif numel(options.xsize)==3
     colormap parula
     colorbar   
     set(gca,'fontSize',8)
-    caxis([0 prctile(im3(:),99.9)]);
+    caxis([0 prctile(im3(:),options.disp_prctl)]);
     axis off
     hold off
     
