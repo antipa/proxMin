@@ -1,4 +1,4 @@
-function [out,varargout] = proxMin(GradErrHandle,ProxFunc,x0,b,options)
+function [out,varargout] = proxMin(GradErrHandle,ProxFunc,xk,b,options)
 
 % Out = proxMin(GradErrHanle,ProxHandle,AxyTxy0,measurement,options)
 %
@@ -69,13 +69,13 @@ if options.save_progress
     open(options.vidObj);
 end
 step_num = 0;
-yk = x0;
+yk = xk;
 %h1 = figure(1);
 
-fun_val = zeros([options.maxIter,1],'like',x0);
+fun_val = zeros([options.maxIter,1],'like',xk);
 %step_size = .0000000008;
-step_size = options.stepsize*ones(1,'like',x0);
-fm1 = zeros(1,'like',x0);
+step_size = options.stepsize*ones(1,'like',xk);
+fm1 = zeros(1,'like',xk);
 f = inf;
 
 switch lower(options.momentum)
@@ -107,10 +107,10 @@ switch lower(options.momentum)
         end
         
     case ('nesterov')
-        tk = ones(1,'like',x0);
-        xk = x0;
+        tk = ones(1,'like',xk);
+        
         yk = xk;
-        f = 1e12*ones(1,'like',x0);
+        f = 1e12*ones(1,'like',xk);
         f_kp1 = f;
         tic
         while (step_num < options.maxIter) && (f>options.residTol)
@@ -124,10 +124,11 @@ switch lower(options.momentum)
 
             t_kp1 = (1+sqrt(1+4*tk^2))/2;
             beta_kp1 = (tk-1)/t_kp1;
-            dx = x_kp1-xk;
-            y_kp1 = x_kp1+beta_kp1*(dx);
             
-            restart = (yk(:)-x_kp1(:))'*dx(:);
+            restart = (yk(:)-x_kp1(:))'*vec(x_kp1 - xk);  %dx(:);
+            yk = x_kp1+beta_kp1*(x_kp1 - xk);
+            
+            
 
             
             if step_num == 1
@@ -176,7 +177,7 @@ switch lower(options.momentum)
                 yk = x_kp1;            
             else
                 tk = t_kp1;
-                yk = y_kp1;
+                %yk = y_kp1;
             end
             xk = x_kp1;           
             f = f_kp1;
