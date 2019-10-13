@@ -135,7 +135,7 @@ switch lower(options.momentum)
                 if options.known_input
                     fprintf('Iteration \t objective \t ||x|| \t momentum \t MSE \t PSNR\n');
                 else
-                    fprintf('Iteration\t data fidelity\t ||x|| \t objective \tsparsity \t momentum \t elapsed time\n');
+                    fprintf('Iter\t ||Ax-b|| \t ||x|| \t Obj \t sparsity \t momentum \t elapsed time\n');
                 end
             end
             if restart<0 && mod(step_num,options.restart_interval)==0
