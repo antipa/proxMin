@@ -1,4 +1,4 @@
-function y = tv3dApproxHaar(x, tau, alpha)
+function y = tv3d_iso_Haar(x, tau, alpha)
 
 % Private functions here
 % circshift does circular shifting
@@ -31,15 +31,15 @@ function w = ht3(x, ax, shift, thresh)
     if ax == 1
         w(1:m, :, :) = C * (x(2:2:end, :, :) + x(1:2:end, :, :));  % use diff or circhisft?
         w((m + 1):end, :, :) = hs_soft(C * (x(2:2:end, :, :) - x(1:2:end, :, :)), thresh);
-        w((m + 1):end, :, :) = hs_soft(w((m + 1):end, :, :), thresh);
+        %w((m + 1):end, :, :) = hs_soft(w((m + 1):end, :, :), thresh);
     elseif ax == 2
         w(:, 1:m, :) = C * (x(:, 2:2:end, :) + x(:, 1:2:end, :));
-        w(:, (m + 1):end, :) = C * (x(:, 2:2:end, :) - x(:, 1:2:end, :));
-        w(:, (m + 1):end, :) = hs_soft(w(:, (m + 1):end, :), thresh);
+        w(:, (m + 1):end, :) = hs_soft(C * (x(:, 2:2:end, :) - x(:, 1:2:end, :)), thresh);
+        %w(:, (m + 1):end, :) = hs_soft(w(:, (m + 1):end, :), thresh);
     else
         w(:, :, 1:m) = C * (x(:, :, 2:2:end) + x(:, :, 1:2:end));
-        w(:, :, (m + 1):end) = C * (x(:, :, 2:2:end) - x(:, :, 1:2:end));
-        w(:, :, (m + 1):end) = hs_soft(w(:, :, (m + 1):end), thresh);
+        w(:, :, (m + 1):end) = hs_soft(C * (x(:, :, 2:2:end) - x(:, :, 1:2:end)), thresh);
+        %w(:, :, (m + 1):end) = hs_soft(w(:, :, (m + 1):end), thresh);
     end
 return
 
