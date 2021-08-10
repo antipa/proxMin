@@ -180,7 +180,7 @@ switch lower(options.momentum)
                 %yk = y_kp1;
             end
             xk = x_kp1;           
-            f = f_kp1;
+            f = fun_val(step_num);
 
             
             if abs(restart)<options.convTol
