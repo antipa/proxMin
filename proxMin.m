@@ -54,6 +54,12 @@ end
 if ~isfield(options,'disp_prctl')
     options.disp_prctl = 99.999;
 end
+if ~isfield(options,'color_axis')
+    options.color_axis = 0;
+end
+if ~isfield(options,'regularizer_schedule')
+    options.regularizer_schedule = 0;
+end
 if options.save_progress
     if ~isfield(options,'save_progress')
         options.progress_file = 'prox_progress.avi';
@@ -119,7 +125,11 @@ switch lower(options.momentum)
             [f_kp1, g] = GradErrHandle(yk);
             fun_val(step_num) = f_kp1;
             %fun_val(step_num) = norm(options.xin-options.crop(yk),'fro')/norm(options.xin,'fro');
-            [x_kp1, norm_x] = ProxFunc(yk-options.stepsize*g);
+            if options.regularizer_schedule
+                [x_kp1, norm_x] = ProxFunc(yk-options.stepsize*g,step_num);
+            else
+                [x_kp1, norm_x] = ProxFunc(yk-options.stepsize*g);
+            end
             fun_val(step_num) = fun_val(step_num)+norm_x;
 
             t_kp1 = (1+sqrt(1+4*tk^2))/2;
@@ -127,10 +137,7 @@ switch lower(options.momentum)
             
             restart = (yk(:)-x_kp1(:))'*vec(x_kp1 - xk);  %dx(:);
             yk = x_kp1+beta_kp1*(x_kp1 - xk);
-            
-            
-
-            
+                  
             if step_num == 1
                 if options.known_input
                     fprintf('Iteration \t objective \t ||x|| \t momentum \t MSE \t PSNR\n');
@@ -222,45 +229,87 @@ if numel(options.xsize)==2
     colormap(options.color_map);
     %caxis(gather([prctile(xk(:),.1) prctile(xk(:),90)]))
 elseif numel(options.xsize)==3
-    xk = gather(xk);
-    set(0,'CurrentFigure',options.fighandle)
-    subplot(1,3,1)
-    
-    im1 = squeeze(max(xk,[],3));
-    imagesc(im1);
-    hold on
-    axis image
-    colormap parula
-    %colorbar
-    caxis([0 prctile(im1(:),options.disp_prctl)])
-    set(gca,'fontSize',6)
-    axis off
-    hold off
-    set(0,'CurrentFigure',options.fighandle)
-    subplot(1,3,2)
-    im2 = squeeze(max(xk,[],1));
-    imagesc(im2);
-    hold on    
-    %axis image
-    colormap parula
-    %colorbar
-    set(gca,'fontSize',8)
-    caxis([0 prctile(im2(:),options.disp_prctl)])
-    axis off
-    hold off
-    drawnow
-    set(0,'CurrentFigure',options.fighandle)
-    subplot(1,3,3)
-    im3 = squeeze(max(xk,[],2));
-    imagesc(im3);
-    hold on
-    %axis image
-    colormap parula
-    colorbar   
-    set(gca,'fontSize',8)
-    caxis([0 prctile(im3(:),options.disp_prctl)]);
-    axis off
-    hold off
+    if options.color_axis == 0
+        xk = gather(xk);
+        set(0,'CurrentFigure',options.fighandle)
+        subplot(1,3,1)
+        
+        im1 = squeeze(max(xk,[],3));
+        imagesc(im1);
+        hold on
+        axis image
+        colormap(options.color_map);
+        %colorbar
+        clim([0 prctile(im1(:),options.disp_prctl)])
+        set(gca,'fontSize',6)
+        axis off
+        hold off
+        
+        set(0,'CurrentFigure',options.fighandle)
+        subplot(1,3,2)
+        im2 = squeeze(max(xk,[],1));
+        imagesc(im2);
+        hold on    
+        %axis image
+        colormap(options.color_map)
+        %colorbar
+        set(gca,'fontSize',8)
+        clim([0 prctile(im2(:),options.disp_prctl)])
+        axis off
+        hold off
+        drawnow
+        set(0,'CurrentFigure',options.fighandle)
+        subplot(1,3,3)
+        im3 = squeeze(max(xk,[],2));
+        imagesc(im3);
+        hold on
+        %axis image
+        colormap(options.color_map)
+        colorbar   
+        set(gca,'fontSize',8)
+        clim([0 prctile(im3(:),options.disp_prctl)]);
+        axis off
+        hold off
+    elseif options.color_axis == 3
+        xk = gather(xk);
+        set(0,'CurrentFigure',options.fighandle)
+        subplot(1,3,1)
+        
+        im1 = xk(:,:,:,round(size(xk,4)/2));%squeeze(sum(xk,ndims(xk)));
+        imagesc(im1/max(im1(:))*100/options.disp_prctl);
+        hold on
+        axis image
+        %colorbar
+        set(gca,'fontSize',6)
+        axis off
+        hold off
+        
+        set(0,'CurrentFigure',options.fighandle)
+        subplot(1,3,2)
+        im2 = permute(squeeze(sum(xk,1)),[1,3,2]);
+        imagesc(im2/max(im2(:))*100/options.disp_prctl);
+        hold on    
+        %axis image
+        %colorbar
+        set(gca,'fontSize',8)
+        axis off
+        hold off
+        drawnow       
+        
+        set(0,'CurrentFigure',options.fighandle)
+        subplot(1,3,3)
+        im3 = permute(squeeze(sum(xk,2)),[1,3,2]);
+        imagesc(im3/max(im3(:))*100/options.disp_prctl);
+        hold on
+        %axis image
+        colorbar   
+        set(gca,'fontSize',8)
+        axis off
+        hold off
+    end
+
+
+
     
 
 elseif numel(options.xsize) == 4
@@ -300,11 +349,13 @@ elseif numel(options.xsize) == 4
     colormap gray
     caxis([0 prctile(xkr(:),99)]);
     hold off
+
+        
     
     
 elseif numel(options.xsize)==1
     
-    plot(xk)
+    plot(options.disp_crop(xk))
 end
 drawnow
 
